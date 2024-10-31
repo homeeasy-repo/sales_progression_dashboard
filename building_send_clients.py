@@ -80,4 +80,4 @@ def may_update_channel_clients():
 
     display_clients_as_table(clients_data)
 
-may_update_channel_clients()
+# may_update_channel_clients()
