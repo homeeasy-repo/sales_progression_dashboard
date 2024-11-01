@@ -46,7 +46,7 @@ def show_above_2000_clients():
         LEFT JOIN 
             public.requirements r ON c.id = r.client_id
         WHERE 
-            r.budget < 2000
+            r.budget > 2000
             AND c.created >= '{start_datetime}'::timestamp AT TIME ZONE 'CST'
             AND c.created <= '{end_datetime}'::timestamp AT TIME ZONE 'CST'
         ORDER BY 
