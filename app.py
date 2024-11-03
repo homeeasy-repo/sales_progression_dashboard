@@ -12,7 +12,7 @@ from above_1500_deals import show_above_1500_clients
 from above_2000_deals import show_above_2000_clients
 import streamlit.components.v1 as components
 
-favicon = "2.png"
+favicon = "fubicon.jpeg"
 st.set_page_config(page_title='Homeeasy Sales Dashboard', page_icon=favicon, layout='wide', initial_sidebar_state='auto')
 
 logo_path = "homeeasyLogo.png"
