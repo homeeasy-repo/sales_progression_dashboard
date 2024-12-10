@@ -31,7 +31,7 @@ st.sidebar.title("Homeeasy Sales Leads Monitoring System")
 page = st.sidebar.selectbox("Choose a report", [
     "Home", 
     "Responsive Clients",
-    "With in 60 Days Clients"
+    "Clients With Move in Date",
     "Sales Leads Monitoring", 
     "Client Stage Progression Report", 
     "Low Sales Progression", 
@@ -124,7 +124,7 @@ elif page == "Sales Leads Monitoring":
     show_sales_leads()
 elif page == "Responsive Clients":
     show_responsive_clients()
-elif page == "With in 60 Days Clients":
+elif page == "Clients With Move in Date":
     show_clients_with_urgent_movein()
 elif page == "Client Stage Progression Report":
     show_client_stage_progression()
