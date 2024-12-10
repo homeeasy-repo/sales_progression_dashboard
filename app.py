@@ -10,6 +10,7 @@ from clients_under_1000 import under_1000_budget_clients
 from under_1500_clients import btw_1000_1500_budget_clients
 from above_1500_deals import show_above_1500_clients
 from above_2000_deals import show_above_2000_clients
+from client_process_sold import show_responsive_clients
 import streamlit.components.v1 as components
 
 favicon = "fubicon.jpeg"
@@ -28,6 +29,7 @@ st.sidebar.title("Homeeasy Sales Leads Monitoring System")
 
 page = st.sidebar.selectbox("Choose a report", [
     "Home", 
+    "Responsive Clients",
     "Sales Leads Monitoring", 
     "Client Stage Progression Report", 
     "Low Sales Progression", 
@@ -118,6 +120,8 @@ if page == "Home":
 
 elif page == "Sales Leads Monitoring":
     show_sales_leads()
+elif page == "Responsive Clients":
+    show_responsive_clients()
 elif page == "Client Stage Progression Report":
     show_client_stage_progression()
 elif page == "May Account Assigned Clients":
