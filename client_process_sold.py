@@ -23,7 +23,7 @@ def show_responsive_clients():
     start_datetime = datetime.combine(start_date, datetime.min.time())
     end_datetime = datetime.combine(end_date, datetime.max.time())
 
-    # Query to fetch responsive clients with beds and baths
+    # Updated query to fetch responsive clients with beds, baths, and "Calls" column
     fetch_responsive_clients_query = f"""
     WITH clients_created_today AS (
         SELECT 
@@ -73,7 +73,15 @@ def show_responsive_clients():
         c.section_8 AS section8,
         c.city,
         c.state,
-        c.street
+        c.street,
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM public.call cl
+                WHERE cl.client_id = c.client_id
+            ) THEN 'True'
+            ELSE 'False'
+        END AS calls
     FROM 
         clients_created_today c
     INNER JOIN 
@@ -95,6 +103,7 @@ def show_responsive_clients():
             return df
         except Exception as error:
             st.error(f"Error fetching records: {error}")
+            return None
         finally:
             if cursor:
                 cursor.close()
@@ -104,14 +113,14 @@ def show_responsive_clients():
     def display_clients_as_table(df):
         st.subheader("Filtered Responsive Clients")
         
-        if df.empty:
+        if df is None or df.empty:
             st.write("No responsive clients found.")
         else:
             df['FUB Link'] = df.apply(
                 lambda row: f'<a href="{row["followup_boss_link"]}" target="_blank">Go to Link</a>', axis=1
             )
             df = df[['client_name', 'employee_name', 'phone_number', 'budget', 'beds', 'baths', 
-                     'move_in_date', 'credit_score', 'section8', 'city', 'state', 'street', 'FUB Link']]
+                     'move_in_date', 'credit_score', 'section8', 'city', 'state', 'street', 'calls', 'FUB Link']]
             
             st.write(df.to_html(escape=False), unsafe_allow_html=True)
 
