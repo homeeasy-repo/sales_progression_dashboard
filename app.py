@@ -12,6 +12,7 @@ from above_1500_deals import show_above_1500_clients
 from above_2000_deals import show_above_2000_clients
 from client_process_sold import show_responsive_clients
 from urgent_movein import show_clients_with_urgent_movein
+from reporting_11am import generate_11am_report
 import streamlit.components.v1 as components
 
 favicon = "fubicon.jpeg"
@@ -32,6 +33,7 @@ page = st.sidebar.selectbox("Choose a report", [
     "Home", 
     "Responsive Clients",
     "Clients With Move in Date",
+    "11 AM Reporting",
     "Sales Leads Monitoring", 
     "Client Stage Progression Report", 
     "Low Sales Progression", 
@@ -126,6 +128,8 @@ elif page == "Responsive Clients":
     show_responsive_clients()
 elif page == "Clients With Move in Date":
     show_clients_with_urgent_movein()
+elif page == "11 AM Reporting":
+    generate_11am_report()
 elif page == "Client Stage Progression Report":
     show_client_stage_progression()
 elif page == "May Account Assigned Clients":
