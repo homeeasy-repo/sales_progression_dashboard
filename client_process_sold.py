@@ -211,4 +211,3 @@ def show_responsive_clients():
     specific_employees_data = fetch_data(fetch_specific_employees_query)
     display_clients_as_table(specific_employees_data, "All Clients Assigned to May Account's")
 
-show_responsive_clients()

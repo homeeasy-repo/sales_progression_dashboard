@@ -124,7 +124,7 @@ def generate_11am_report():
 
         # Add option to download as CSV
         csv = client_data_display.to_csv(index=False)
-        st.download_button(label="Download 11AM Reporting CSV File", data=csv, file_name="client_details.csv", mime="text/csv")
+        st.download_button(label="Download 11AM Reporting CSV File", data=csv, file_name="11AM Reporting.csv", mime="text/csv")
     else:
         st.write("No clients found in the selected date range.")
 

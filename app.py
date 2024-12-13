@@ -19,7 +19,9 @@ favicon = "fubicon.jpeg"
 st.set_page_config(page_title='Homeeasy Sales Dashboard', page_icon=favicon, layout='wide', initial_sidebar_state='auto')
 
 logo_path = "homeeasyLogo.png"
-st.sidebar.image(logo_path, use_column_width=True)
+# st.sidebar.image(logo_path, use_column_width=True)
+st.sidebar.image(logo_path, width=300)
+
 
 if "refresh_count" not in st.session_state:
     st.session_state.refresh_count = 0
