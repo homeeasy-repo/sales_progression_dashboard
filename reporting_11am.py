@@ -25,61 +25,75 @@ def generate_11am_report():
 
     # Query to fetch client data
     fetch_clients_query = f"""
-        WITH clients_created_today AS (
-            SELECT 
-                c.id AS client_id,
-                c.fullname AS client_name,
-                e.fullname AS employee_name,
-                c.created AT TIME ZONE 'UTC' AT TIME ZONE 'CST' AS created_at,
-                r.beds AS bedrooms,
-                r.baths AS bathrooms,
-                r.move_in_date AT TIME ZONE 'UTC' AT TIME ZONE 'CST' AS move_in_date,
-                r.budget AS budget,
-                CONCAT('https://services.followupboss.com/2/people/view/', c.id) AS fub_link
-            FROM 
-                public.client c
-            LEFT JOIN 
-                public.employee e ON c.assigned_employee = e.id
-            LEFT JOIN 
-                public.requirements r ON c.id = r.client_id
-            WHERE 
-                c.created >= '{start_datetime}'::timestamp AT TIME ZONE 'CST'
-                AND c.created <= '{end_datetime}'::timestamp AT TIME ZONE 'CST'
-                AND (c.assigned_employee NOT IN (317, 318, 319) OR c.assigned_employee IS NULL)
-        )
-        SELECT 
-            c.client_id,
-            c.client_name,
-            c.employee_name,
-            c.created_at,
-            c.bedrooms,
-            c.bathrooms,
-            c.move_in_date,
-            c.budget,
-            c.fub_link,
-            CASE 
-                WHEN EXISTS (
-                    SELECT 1 
-                    FROM public.call cl
-                    WHERE cl.client_id = c.client_id
-                ) THEN 'YES'
-                ELSE 'NO'
-            END AS call_status
-        FROM 
-            clients_created_today c
-        ORDER BY 
-            c.created_at DESC;
+       WITH clients_created_today AS (
+    SELECT 
+        c.id AS client_id,
+        c.fullname AS client_name,
+        e.fullname AS employee_name,
+        c.created AT TIME ZONE 'UTC' AT TIME ZONE 'CST' AS created_at,
+        r.beds AS bedrooms,
+        r.baths AS bathrooms,
+        r.move_in_date AT TIME ZONE 'UTC' AT TIME ZONE 'CST' AS move_in_date,
+        r.budget AS budget,
+        CONCAT('https://services.followupboss.com/2/people/view/', c.id) AS fub_link,
+        (
+            SELECT COUNT(*) 
+            FROM public.textmessage tm
+            WHERE tm.client_id = c.id 
+              AND tm.employee_id = e.id
+              AND tm.is_incoming = FALSE -- Only include messages sent by the employee
+        ) AS total_employee_messages
+    FROM 
+        public.client c
+    LEFT JOIN 
+        public.employee e ON c.assigned_employee = e.id
+    LEFT JOIN 
+        public.requirements r ON c.id = r.client_id
+    WHERE 
+        c.created >= '{start_datetime}'::timestamp AT TIME ZONE 'CST'
+        AND c.created <= '{end_datetime}'::timestamp AT TIME ZONE 'CST'
+        AND (c.assigned_employee NOT IN (317, 318, 319) OR c.assigned_employee IS NULL)
+)
+SELECT 
+    c.client_id,
+    c.client_name,
+    c.employee_name,
+    c.created_at,
+    c.bedrooms,
+    c.bathrooms,
+    c.move_in_date,
+    c.budget,
+    c.fub_link,
+    c.total_employee_messages, -- Correct column reference
+    CASE 
+        WHEN c.total_employee_messages > 0 THEN 'YES'
+        ELSE 'NO'
+    END AS call_status
+FROM 
+    clients_created_today c
+ORDER BY 
+    c.created_at DESC;
+
     """
 
     fetch_employee_summary_query = f"""
         SELECT 
             e.fullname AS employee_name,
-            COUNT(c.id) AS number_of_clients
+            COUNT(c.id) AS number_of_clients,
+            COALESCE(SUM(
+                (
+                    SELECT COUNT(*) 
+                    FROM public.textmessage tm
+                    WHERE tm.employee_id = e.id 
+                      AND tm.client_id = c.id
+                      AND tm.is_incoming = FALSE
+                )
+            ), 0) AS total_employee_messages
         FROM 
             public.client c
         LEFT JOIN 
             public.employee e ON c.assigned_employee = e.id
-        WHERE 
+        WHERE
             c.created >= '{start_datetime}'::timestamp AT TIME ZONE 'CST'
             AND c.created <= '{end_datetime}'::timestamp AT TIME ZONE 'CST'
             AND (c.assigned_employee NOT IN (317, 318, 319) OR c.assigned_employee IS NULL)
@@ -119,7 +133,8 @@ def generate_11am_report():
             lambda row: f'<a href="{row["fub_link"]}" target="_blank">Go to Link</a>', axis=1
         )
         client_data_display = client_data[['client_name', 'employee_name', 'created_at', 'bedrooms', 
-                                           'bathrooms', 'move_in_date', 'budget', 'call_status', 'FUB Link']]
+                                   'bathrooms', 'move_in_date', 'budget', 'total_employee_messages', 'call_status', 'FUB Link']]
+
         st.write(client_data_display.to_html(escape=False, index=False), unsafe_allow_html=True)
 
         # Add option to download as CSV
@@ -135,3 +150,5 @@ def generate_11am_report():
     else:
         st.write("No leads assigned to employees in the selected date range.")
 
+
+generate_11am_report()
