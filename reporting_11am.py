@@ -149,6 +149,3 @@ ORDER BY
         st.dataframe(employee_summary_data, use_container_width=True)
     else:
         st.write("No leads assigned to employees in the selected date range.")
-
-
-generate_11am_report()
