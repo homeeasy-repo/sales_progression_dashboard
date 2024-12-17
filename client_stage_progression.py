@@ -2,7 +2,7 @@ import streamlit as st
 import psycopg2
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def show_client_stage_progression():
     st.title("Client Stage Progression Report")
@@ -31,7 +31,7 @@ def show_client_stage_progression():
             public.employee e ON c.assigned_employee = e.id
         WHERE 
             csp.current_stage >= 4
-            AND csp.created_on >= NOW() - INTERVAL '24 hours'
+            AND csp.created_on BETWEEN %s AND %s
         GROUP BY 
             csp.client_id, c.fullname, e.fullname
         ORDER BY 
@@ -52,7 +52,7 @@ def show_client_stage_progression():
         public.employee e ON c.assigned_employee = e.id
     WHERE 
         csp.current_stage >= 4
-        AND csp.created_on >= NOW() - INTERVAL '24 hours'
+        AND csp.created_on BETWEEN %s AND %s
     GROUP BY 
         csp.client_id, e.fullname
     )
@@ -68,13 +68,13 @@ def show_client_stage_progression():
         date_moved DESC, count_of_leads DESC;
     """
 
-    def fetch_data(query):
+    def fetch_data(query, start_date, end_date):
         connection = None
         cursor = None
         try:
             connection = psycopg2.connect(**db_params)
             cursor = connection.cursor()
-            cursor.execute(query)
+            cursor.execute(query, (start_date, end_date))
             records = cursor.fetchall()
             column_names = [desc[0] for desc in cursor.description]
             df = pd.DataFrame(records, columns=column_names)
@@ -93,7 +93,6 @@ def show_client_stage_progression():
         st.subheader("Bar Chart of Clients in Property Touring and Beyond")
         fig, ax = plt.subplots(figsize=(14, 8)) 
 
-        # Check if the DataFrame is empty
         if df.empty:
             st.write("No data available for the selected period.")
             return
@@ -119,7 +118,7 @@ def show_client_stage_progression():
         ax.set_title('Clients in Property Touring and Beyond', fontsize=16)
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right', fontsize=10)
         st.pyplot(fig)
-    
+
     def plot_sales_reps_moving_leads(df):
         st.subheader("Graph: Sales Reps Moving Leads to Property Touring and Beyond")
         fig, ax = plt.subplots(figsize=(14, 8)) 
@@ -139,11 +138,22 @@ def show_client_stage_progression():
         pivot_df = pivot_df.rename(columns={4: 'Stage 4: Property Touring', 5: 'Stage 5: Property Tour and Feedback', 6: 'Stage 6: Application and Approval', 7: 'Stage 7: Post-Approval and Follow-Up', 8: 'Stage 8: Commission Collection'})
         st.dataframe(pivot_df)
 
-    # The "Show Data / Refresh Data" button is not needed since the page refreshes automatically
-    today = datetime.today().strftime('%Y-%m-%d')
-    st.markdown(f"**DATE: {today}** (This report contains data from the last 24 hours)")
+    # Show the date range message
+    selected_start_date = st.date_input("Select Start Date", datetime.today())
+    selected_end_date = st.date_input("Select End Date", datetime.today())  # Default to today's date
 
-    leads_data = fetch_data(fetch_leads_stage_4_and_beyond_query)
+    # Convert selected dates to strings
+    start_date_filter = selected_start_date.strftime('%Y-%m-%d')
+    end_date_filter = selected_end_date.strftime('%Y-%m-%d')
+
+    # Check if start and end dates are the same
+    if start_date_filter == end_date_filter:
+        st.markdown(f"**DATE: {start_date_filter}** (This report contains data for the selected day up to the current time)")
+        end_date_filter = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Include current time for the same day
+    else:
+        st.markdown(f"**DATE RANGE: {start_date_filter} to {end_date_filter}**")
+
+    leads_data = fetch_data(fetch_leads_stage_4_and_beyond_query, start_date_filter, end_date_filter)
 
     if leads_data is not None:
         st.subheader("Leads in Property Touring and Beyond")
@@ -153,10 +163,41 @@ def show_client_stage_progression():
         plot_leads_stage_4_and_beyond(leads_data)
         create_employee_stage_table(leads_data)
 
-    sales_reps_data = fetch_data(fetch_sales_reps_count_query)
+    sales_reps_data = fetch_data(fetch_sales_reps_count_query, start_date_filter, end_date_filter)
 
     if sales_reps_data is not None:
         st.subheader("Sales Reps Moving Leads to Property Touring and Beyond")
         st.dataframe(sales_reps_data)
         st.write(f"Total entries: {len(sales_reps_data)}")
         plot_sales_reps_moving_leads(sales_reps_data)
+
+    # Fetching clients at current stage 7 for the selected date range
+    fetch_stage_7_clients_query = """
+        SELECT 
+            DISTINCT ON (csp.client_id) 
+            csp.client_id,
+            c.fullname AS client_name,
+            e.fullname AS employee_name,
+            csp.current_stage,
+            csp.created_on AS time_entered_stage
+        FROM 
+            public.client_stage_progression csp
+        JOIN 
+            public.client c ON csp.client_id = c.id
+        JOIN 
+            public.employee e ON c.assigned_employee = e.id
+        WHERE 
+            csp.current_stage = 7
+            AND csp.created_on::date BETWEEN %s AND %s
+        ORDER BY 
+            csp.client_id, csp.created_on DESC;
+    """
+
+    
+    stage_7_clients = fetch_data(fetch_stage_7_clients_query, start_date_filter, end_date_filter)
+    
+    if stage_7_clients is not None and not stage_7_clients.empty:
+        st.subheader("Clients at Current Stage 7 (Post-Approval and Follow-Up)")
+        st.dataframe(stage_7_clients)
+        st.write(f"Total clients at Stage 7: {len(stage_7_clients)}")
+
