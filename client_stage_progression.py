@@ -199,10 +199,25 @@ def show_client_stage_progression():
     if stage_7_clients is not None and not stage_7_clients.empty:
         st.subheader("Clients at Current Stage 7 (Post-Approval and Follow-Up)")
 
-        # Convert followup_boss_link into a clickable HTML link
-        stage_7_clients['fub_link'] = stage_7_clients['followup_boss_link'].apply(lambda x: f'<a href="{x}" target="_blank">View Client</a>')
-        
-        # Use st.markdown to render HTML for the link
-        st.markdown(stage_7_clients.to_html(escape=False), unsafe_allow_html=True)
+        # Keep only the 'fub_link' column for clickable links
+        stage_7_clients['FUB Link'] = stage_7_clients['followup_boss_link'].apply(
+            lambda url: f'<a href="{url}" target="_blank">View Client</a>'
+        )
+
+        # Remove 'followup_boss_link' column and prepare the display dataframe
+        display_columns = ['client_id', 'client_name', 'employee_name', 'current_stage', 'time_entered_stage', 'FUB Link']
+        stage_7_display = stage_7_clients[display_columns]
+
+        # Render the table with HTML links
+        st.write(stage_7_display.to_html(escape=False, index=False), unsafe_allow_html=True)
+
+        # Add CSV download button
+        csv_data = stage_7_display.drop(columns=['FUB Link'])  # Exclude HTML column for clean CSV
+        csv_data['FUB Link'] = stage_7_clients['followup_boss_link']  # Add plain URL in CSV
+        csv = csv_data.to_csv(index=False)
+        st.download_button(label="Download Stage 7 Clients CSV", data=csv, file_name="Stage7_Clients.csv", mime="text/csv")
+
         st.write(f"Total clients at Stage 7: {len(stage_7_clients)}")
+    else:
+        st.write("No clients found at Stage 7 in the selected date range.")
 
