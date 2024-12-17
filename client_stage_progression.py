@@ -179,7 +179,8 @@ def show_client_stage_progression():
             c.fullname AS client_name,
             e.fullname AS employee_name,
             csp.current_stage,
-            csp.created_on AS time_entered_stage
+            csp.created_on AS time_entered_stage,
+            CONCAT('https://services.followupboss.com/2/people/view/', csp.client_id) AS followup_boss_link
         FROM 
             public.client_stage_progression csp
         JOIN 
@@ -193,11 +194,15 @@ def show_client_stage_progression():
             csp.client_id, csp.created_on DESC;
     """
 
-    
     stage_7_clients = fetch_data(fetch_stage_7_clients_query, start_date_filter, end_date_filter)
     
     if stage_7_clients is not None and not stage_7_clients.empty:
         st.subheader("Clients at Current Stage 7 (Post-Approval and Follow-Up)")
-        st.dataframe(stage_7_clients)
+
+        # Convert followup_boss_link into a clickable HTML link
+        stage_7_clients['fub_link'] = stage_7_clients['followup_boss_link'].apply(lambda x: f'<a href="{x}" target="_blank">View Client</a>')
+        
+        # Use st.markdown to render HTML for the link
+        st.markdown(stage_7_clients.to_html(escape=False), unsafe_allow_html=True)
         st.write(f"Total clients at Stage 7: {len(stage_7_clients)}")
 
