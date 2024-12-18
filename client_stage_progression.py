@@ -229,7 +229,7 @@ def show_client_stage_progression():
         "Select Stage You want to see?",
         ("7", "6", "5", "4"),
         index=None,
-        placeholder="Select contact method...",
+        placeholder="Select Stage Number...",
     )
     stage_7_clients = fetch_data_stage(fetch_stage_7_clients_query , option, start_date_filter, end_date_filter)
     
