@@ -88,6 +88,26 @@ def show_client_stage_progression():
                 cursor.close()
             if connection:
                 connection.close()
+    def fetch_data_stage(query, option, start_date, end_date):
+        connection = None
+        cursor = None
+        try:
+            connection = psycopg2.connect(**db_params)
+            cursor = connection.cursor()
+            cursor.execute(query, (option, start_date, end_date))
+            records = cursor.fetchall()
+            column_names = [desc[0] for desc in cursor.description]
+            df = pd.DataFrame(records, columns=column_names)
+            
+            return df
+            
+        except Exception as error:
+            st.error(f"Error fetching records: {error}")
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
 
     def plot_leads_stage_4_and_beyond(df):
         st.subheader("Bar Chart of Clients in Property Touring and Beyond")
@@ -171,10 +191,9 @@ def show_client_stage_progression():
         st.write(f"Total entries: {len(sales_reps_data)}")
         plot_sales_reps_moving_leads(sales_reps_data)
 
-    # Fetching clients at current stage 7 for the selected date range
+
     fetch_stage_7_clients_query = """
         SELECT 
-            DISTINCT ON (csp.client_id) 
             csp.client_id,
             c.fullname AS client_name,
             e.fullname AS employee_name,
@@ -187,19 +206,43 @@ def show_client_stage_progression():
             public.client c ON csp.client_id = c.id
         JOIN 
             public.employee e ON c.assigned_employee = e.id
+        INNER JOIN (
+            SELECT 
+                client_id,
+                MAX(created_on) AS latest_created_on
+            FROM 
+                public.client_stage_progression
+            WHERE 
+                current_stage >= 4
+            GROUP BY 
+                client_id
+        ) latest_stage ON csp.client_id = latest_stage.client_id 
+                    AND csp.created_on = latest_stage.latest_created_on
         WHERE 
-            csp.current_stage = 7
+            csp.current_stage = %s
             AND csp.created_on::date BETWEEN %s AND %s
         ORDER BY 
-            csp.client_id, csp.created_on DESC;
+            csp.created_on DESC;
     """
 
-    stage_7_clients = fetch_data(fetch_stage_7_clients_query, start_date_filter, end_date_filter)
+    option = st.selectbox(
+        "Select Stage You want to see?",
+        ("7", "6", "5", "4"),
+        index=None,
+        placeholder="Select contact method...",
+    )
+    stage_7_clients = fetch_data_stage(fetch_stage_7_clients_query , option, start_date_filter, end_date_filter)
     
     if stage_7_clients is not None and not stage_7_clients.empty:
-        st.subheader("Clients at Current Stage 7 (Post-Approval and Follow-Up)")
-
-        # Keep only the 'fub_link' column for clickable links
+        if option == "7": 
+            st.subheader("Clients at Current Stage 7 (Post-Approval and Follow-Up)")
+        elif option == "6":
+            st.subheader("Clients at Current Stage 6 (Application and Approval)")
+        elif option == "5":
+            st.subheader("Clients at Current Stage 5 (Property Tour and Feedback)")
+        else:
+            st.subheader("Clients at Current Stage 4 (Property Touring)")
+            
         stage_7_clients['FUB Link'] = stage_7_clients['followup_boss_link'].apply(
             lambda url: f'<a href="{url}" target="_blank">View Client</a>'
         )
@@ -215,9 +258,9 @@ def show_client_stage_progression():
         csv_data = stage_7_display.drop(columns=['FUB Link'])  # Exclude HTML column for clean CSV
         csv_data['FUB Link'] = stage_7_clients['followup_boss_link']  # Add plain URL in CSV
         csv = csv_data.to_csv(index=False)
-        st.download_button(label="Download Stage 7 Clients CSV", data=csv, file_name="Stage7_Clients.csv", mime="text/csv")
-
-        st.write(f"Total clients at Stage 7: {len(stage_7_clients)}")
+        st.download_button(label=f"Download Stage {option} Clients CSV", data=csv, file_name=f"Stage{option}_Clients.csv", mime="text/csv")
+        
+        st.write(f"Total clients at Stage {option}: {len(stage_7_clients)}")
     else:
-        st.write("No clients found at Stage 7 in the selected date range.")
+        st.write(f"No clients found at Stage {option} in the selected date range.")
 
