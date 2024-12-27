@@ -52,7 +52,7 @@ def generate_11am_report():
         WHERE 
             c.created >= '{start_datetime}'::timestamp AT TIME ZONE 'CST'
             AND c.created <= '{end_datetime}'::timestamp AT TIME ZONE 'CST'
-            AND (c.assigned_employee NOT IN (317, 318, 319) OR c.assigned_employee IS NULL)
+            AND (c.assigned_employee NOT IN (317, 318, 319, 344) OR c.assigned_employee IS NULL)
     ),
     clients_with_received_status AS (
         SELECT DISTINCT 
@@ -108,7 +108,7 @@ def generate_11am_report():
         WHERE 
             c.created >= '{start_datetime}'::timestamp AT TIME ZONE 'CST'
             AND c.created <= '{end_datetime}'::timestamp AT TIME ZONE 'CST'
-            AND (c.assigned_employee NOT IN (317, 318, 319) OR c.assigned_employee IS NULL)
+            AND (c.assigned_employee NOT IN (317, 318, 319, 344) OR c.assigned_employee IS NULL)
         GROUP BY 
             e.fullname
         ORDER BY 
