@@ -79,7 +79,7 @@ def show_above_1500_clients():
             st.write("No clients found.")
         else:
             total_clients = len(df)
-            not_assigned_to_317_318_319 = (~df['assigned_employee'].isin([317, 318, 319])).sum()
+            not_assigned_to_317_318_319 = (~df['assigned_employee'].isin([317, 318, 319,410,415,416])).sum()
             percentage_not_assigned = (not_assigned_to_317_318_319 / total_clients) * 100
 
             st.subheader(f"Percentage of clients assigned to employees: {percentage_not_assigned:.2f}%")

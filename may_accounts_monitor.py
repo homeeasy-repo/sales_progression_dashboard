@@ -3,7 +3,7 @@ import psycopg2
 import pandas as pd
 
 def show_recent_clients():
-    st.title("Clients Created in Last 24 Hours (Assigned to Employees 317, 318, 319)")
+    st.title("Clients Created in Last 24 Hours (Assigned to Employees 317, 318, 319,410,415,416)")
 
     db_params = {
         'dbname': st.secrets["database"]["DB_NAME"],
@@ -26,7 +26,7 @@ def show_recent_clients():
             public.employee e ON c.assigned_employee = e.id
         WHERE 
             c.created >= NOW() - INTERVAL '24 hours'
-            AND e.id IN (317, 318, 319)
+            AND e.id IN (317, 318, 319,410,415,416)
         ORDER BY 
             c.id;
     """
