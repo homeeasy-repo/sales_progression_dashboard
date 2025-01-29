@@ -14,6 +14,25 @@ def generate_11am_report():
         'port': st.secrets["database"]["DB_PORT"]
     }
 
+    def fetch_data(query):
+        connection = None
+        cursor = None
+        try:
+            connection = psycopg2.connect(**db_params)
+            cursor = connection.cursor()
+            cursor.execute(query)
+            records = cursor.fetchall()
+            column_names = [desc[0] for desc in cursor.description]
+            return pd.DataFrame(records, columns=column_names)
+        except Exception as error:
+            st.error(f"Error fetching records: {error}")
+            return pd.DataFrame()
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+
     # Date input to select a start and end date
     st.subheader("Select Date Range for the Report")
     start_date = st.date_input("Start Date", datetime.now().date() - timedelta(days=1))
@@ -135,25 +154,6 @@ def generate_11am_report():
         ORDER BY 
             number_of_clients DESC;
     """
-
-    def fetch_data(query):
-        connection = None
-        cursor = None
-        try:
-            connection = psycopg2.connect(**db_params)
-            cursor = connection.cursor()
-            cursor.execute(query)
-            records = cursor.fetchall()
-            column_names = [desc[0] for desc in cursor.description]
-            return pd.DataFrame(records, columns=column_names)
-        except Exception as error:
-            st.error(f"Error fetching records: {error}")
-            return pd.DataFrame()
-        finally:
-            if cursor:
-                cursor.close()
-            if connection:
-                connection.close()
 
     # Fetch the data
     client_data = fetch_data(fetch_clients_query)
