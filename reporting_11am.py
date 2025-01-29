@@ -19,9 +19,28 @@ def generate_11am_report():
     start_date = st.date_input("Start Date", datetime.now().date() - timedelta(days=1))
     end_date = st.date_input("End Date", datetime.now().date())
 
+    # Add employee filter query
+    fetch_employees_query = """
+        SELECT DISTINCT e.fullname 
+        FROM public.employee e
+        WHERE e.id NOT IN (317, 318, 319, 410, 415, 416, 344)
+        AND e.fullname IS NOT NULL
+        ORDER BY e.fullname;
+    """
+    
+    # Fetch employee list for dropdown
+    employees_df = fetch_data(fetch_employees_query)
+    employee_options = ['All Employees'] + employees_df['fullname'].tolist()
+    selected_employee = st.selectbox("Select Employee", employee_options)
+
     # Convert dates to datetime format with start and end of the day
     start_datetime = datetime.combine(start_date, datetime.min.time())
     end_datetime = datetime.combine(end_date, datetime.max.time())
+
+    # Modify the client query to include employee filter
+    employee_filter = ""
+    if selected_employee != 'All Employees':
+        employee_filter = f"AND e.fullname = '{selected_employee}'"
 
     # Query to fetch client data
     fetch_clients_query = f"""
@@ -41,7 +60,7 @@ def generate_11am_report():
                 FROM public.textmessage tm
                 WHERE tm.client_id = c.id 
                   AND tm.employee_id = e.id
-                  AND tm.is_incoming = FALSE -- Only include messages sent by the employee
+                  AND tm.is_incoming = FALSE
             ) AS total_employee_messages
         FROM 
             public.client c
@@ -53,6 +72,7 @@ def generate_11am_report():
             c.created >= '{start_datetime}'::timestamp AT TIME ZONE 'CST'
             AND c.created <= '{end_datetime}'::timestamp AT TIME ZONE 'CST'
             AND (c.assigned_employee NOT IN (317, 318, 319,410,415,416, 344) OR c.assigned_employee IS NULL)
+            {employee_filter}
     ),
     clients_with_received_status AS (
         SELECT DISTINCT 
@@ -72,7 +92,7 @@ def generate_11am_report():
         c.move_in_date,
         c.budget,
         c.fub_link,
-        c.total_employee_messages, -- Correct column reference
+        c.total_employee_messages,
         CASE 
             WHEN EXISTS (
                 SELECT 1 
@@ -109,6 +129,7 @@ def generate_11am_report():
             c.created >= '{start_datetime}'::timestamp AT TIME ZONE 'CST'
             AND c.created <= '{end_datetime}'::timestamp AT TIME ZONE 'CST'
             AND (c.assigned_employee NOT IN (317, 318, 319,410,415,416, 344) OR c.assigned_employee IS NULL)
+            {employee_filter}
         GROUP BY 
             e.fullname
         ORDER BY 
