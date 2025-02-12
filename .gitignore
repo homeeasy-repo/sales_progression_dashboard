@@ -1,2 +1,7 @@
 
 myenv
+__pycache__/
+.devcontainer/
+.json
+secrets.toml
+.csv
