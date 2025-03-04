@@ -19,6 +19,7 @@ db_params = {
 
 employee_names = ['Mukund Chopra','John Green', 'Hiba Siddiqui','Travis Grey','John Reed','Joshua weller','SOVIT BISWAL', 'Emma Paul','Omar Rogers','Ruby Smith', 'Brian Baik', 'BPO Diligence']
 
+# Default date range calculation - will be overridden by user selection
 end_time = datetime.now()
 start_time = end_time - timedelta(days=1)
 start_time = start_time.replace(hour=13, minute=0, second=0)
@@ -60,78 +61,79 @@ JOIN
 ORDER BY client_id;
 """
 
-fetch_records_query_template = f"""
-(
-    SELECT
-        to_char(t.created, 'YYYY-MM-DD HH24:MI:SS') AS timestamp,
-        'text_created' AS type,
-        t.message AS message,
-        t.client_id,
-        e.fullname AS employee_name,
-        NULL AS call_duration
-    FROM
-        textmessage t
-    JOIN
-        employee e ON t.created_by = e.id
-    WHERE
-        e.fullname = %s
-        AND t.created BETWEEN '{start_time_str}' AND '{end_time_str}'
-)
-UNION ALL
-(
-    SELECT
-        to_char(c.created, 'YYYY-MM-DD HH24:MI:SS') AS timestamp,
-        'call' AS type,
-        c.note AS message,
-        c.client_id,
-        e.fullname AS employee_name,
-        c.duration AS call_duration
-    FROM
-        call c
-    JOIN
-        employee e ON c.employee_id = e.id
-    WHERE
-        e.fullname = %s
-        AND c.created BETWEEN '{start_time_str}' AND '{end_time_str}'
-        AND c.is_incoming = false
-)
-ORDER BY
-    client_id, timestamp;
-"""
+def get_fetch_records_query(start_time_str, end_time_str):
+    return f"""
+    (
+        SELECT
+            to_char(t.created, 'YYYY-MM-DD HH24:MI:SS') AS timestamp,
+            'text_created' AS type,
+            t.message AS message,
+            t.client_id,
+            e.fullname AS employee_name,
+            NULL AS call_duration
+        FROM
+            textmessage t
+        JOIN
+            employee e ON t.created_by = e.id
+        WHERE
+            e.fullname = %s
+            AND t.created BETWEEN '{start_time_str}' AND '{end_time_str}'
+    )
+    UNION ALL
+    (
+        SELECT
+            to_char(c.created, 'YYYY-MM-DD HH24:MI:SS') AS timestamp,
+            'call' AS type,
+            c.note AS message,
+            c.client_id,
+            e.fullname AS employee_name,
+            c.duration AS call_duration
+        FROM
+            call c
+        JOIN
+            employee e ON c.employee_id = e.id
+        WHERE
+            e.fullname = %s
+            AND c.created BETWEEN '{start_time_str}' AND '{end_time_str}'
+            AND c.is_incoming = false
+    )
+    ORDER BY
+        client_id, timestamp;
+    """
 
-sql_query = f"""
-SELECT
-    csp.id,
-    csp.client_id,
-    c.fullname,
-    CASE
-        WHEN csp.current_stage = 1 THEN 'Stage 1: Not Interested'
-        WHEN csp.current_stage = 2 THEN 'Stage 2: Initial Contact'
-        WHEN csp.current_stage = 3 THEN 'Stage 3: Requirement Collection'
-        WHEN csp.current_stage = 4 THEN 'Stage 4: Property Touring'
-        WHEN csp.current_stage = 5 THEN 'Stage 5: Property Tour and Feedback'
-        WHEN csp.current_stage = 6 THEN 'Stage 6: Application and Approval'
-        WHEN csp.current_stage = 7 THEN 'Stage 7: Post-Approval and Follow-Up'
-        WHEN csp.current_stage = 8 THEN 'Stage 8: Commission Collection'
-        WHEN csp.current_stage = 9 THEN 'Stage 9: Dead Stage'
-        ELSE 'Unknown Stage'
-    END AS stage_name,
-    csp.current_stage,
-    csp.created_on,
-    c.assigned_employee,
-    c.assigned_employee_name
-FROM
-    client_stage_progression csp
-JOIN
-    client c
-ON
-    csp.client_id = c.id
-WHERE
-    csp.created_on BETWEEN '{start_time_str}' AND '{end_time_str}'
-ORDER BY
-    csp.created_on;
-"""
-
+def get_stage_progression_query(start_time_str, end_time_str):
+    return f"""
+    SELECT
+        csp.id,
+        csp.client_id,
+        c.fullname,
+        CASE
+            WHEN csp.current_stage = 1 THEN 'Stage 1: Not Interested'
+            WHEN csp.current_stage = 2 THEN 'Stage 2: Initial Contact'
+            WHEN csp.current_stage = 3 THEN 'Stage 3: Requirement Collection'
+            WHEN csp.current_stage = 4 THEN 'Stage 4: Property Touring'
+            WHEN csp.current_stage = 5 THEN 'Stage 5: Property Tour and Feedback'
+            WHEN csp.current_stage = 6 THEN 'Stage 6: Application and Approval'
+            WHEN csp.current_stage = 7 THEN 'Stage 7: Post-Approval and Follow-Up'
+            WHEN csp.current_stage = 8 THEN 'Stage 8: Commission Collection'
+            WHEN csp.current_stage = 9 THEN 'Stage 9: Dead Stage'
+            ELSE 'Unknown Stage'
+        END AS stage_name,
+        csp.current_stage,
+        csp.created_on,
+        c.assigned_employee,
+        c.assigned_employee_name
+    FROM
+        client_stage_progression csp
+    JOIN
+        client c
+    ON
+        csp.client_id = c.id
+    WHERE
+        csp.created_on BETWEEN '{start_time_str}' AND '{end_time_str}'
+    ORDER BY
+        csp.created_on;
+    """
 
 def employee_record(name, df):
     temp = df[df['assigned_employee_name'] == name]
@@ -166,15 +168,16 @@ def fetch_client_ids_and_names():
         if connection:
             connection.close()
 
-def fetch_and_save_records_to_csv():
+def fetch_and_save_records_to_csv(start_time_str, end_time_str):
     connection = None
     cursor = None
     all_records = []
     try:
         connection = psycopg2.connect(**db_params)
         cursor = connection.cursor()
+        query = get_fetch_records_query(start_time_str, end_time_str)
         for name in employee_names:
-            cursor.execute(fetch_records_query_template, (name, name))
+            cursor.execute(query, (name, name))
             records = cursor.fetchall()
             all_records.extend(records)
         df = pd.DataFrame(all_records, columns=['timestamp', 'type', 'message', 'client_id', 'employee_name', 'call_duration'])
@@ -247,21 +250,78 @@ def generate_combined_streamlit_report(df, df5):
         add_employee_report(employee_name, df, df5)
         
 def show_sales_rep_daily_report():
-    df5 = run_query_and_save_to_csv(sql_query)
-    df5 = df5.drop_duplicates(subset=['client_id', 'current_stage'])
-    df5 = df5[df5['current_stage'] != 9]
+    # Add date selection at the top
+    st.subheader("Select Date Range")
+    
+    # Calculate default date range
+    today = datetime.now()
+    yesterday = today - timedelta(days=1)
+    default_start = yesterday.replace(hour=13, minute=0, second=0)
+    default_end = default_start + timedelta(hours=12)
+    
+    # Create date range selector
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input(
+            "Start Date",
+            default_start.date(),
+            format="MM/DD/YYYY",
+        )
+    with col2:
+        end_date = st.date_input(
+            "End Date",
+            default_end.date(),
+            format="MM/DD/YYYY",
+        )
+    
+    # Add time selection
+    col3, col4 = st.columns(2)
+    with col3:
+        start_time = st.time_input("Start Time", default_start.time())
+    with col4:
+        end_time = st.time_input("End Time", default_end.time())
+    
+    # Combine date and time
+    start_datetime = datetime.combine(start_date, start_time)
+    end_datetime = datetime.combine(end_date, end_time)
+    
+    # Format for SQL queries
+    start_time_str = start_datetime.strftime('%Y-%m-%d %H:%M:%S')
+    end_time_str = end_datetime.strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Display selected range
+    st.info(f"Showing data from {start_time_str} to {end_time_str}")
+    
+    # Get the stage progression query with the selected date range
+    stage_query = get_stage_progression_query(start_time_str, end_time_str)
+    
+    # Run queries with the selected date range
+    df5 = run_query_and_save_to_csv(stage_query)
+    
+    if df5 is not None and not df5.empty:
+        df5 = df5.drop_duplicates(subset=['client_id', 'current_stage'])
+        df5 = df5[df5['current_stage'] != 9]
 
-    client_ids = {}
-    df = fetch_client_ids_and_names()
-    for index, row in df.iterrows():
-        client_ids[row['client_id']] = row['client_name']
+        client_ids = {}
+        df = fetch_client_ids_and_names()
+        if df is not None:
+            for index, row in df.iterrows():
+                client_ids[row['client_id']] = row['client_name']
 
-    df = fetch_and_save_records_to_csv()
-    
-    # Ensure call_duration is numeric
-    df['call_duration'] = pd.to_numeric(df['call_duration'], errors='coerce').fillna(0)
-    
-    # Map client IDs to client names
-    df['client_name'] = df['client_id'].map(client_ids)
-    
-    generate_combined_streamlit_report(df, df5)
+            # Fetch records with the selected date range
+            df = fetch_and_save_records_to_csv(start_time_str, end_time_str)
+            
+            if df is not None and not df.empty:
+                # Ensure call_duration is numeric
+                df['call_duration'] = pd.to_numeric(df['call_duration'], errors='coerce').fillna(0)
+                
+                # Map client IDs to client names
+                df['client_name'] = df['client_id'].map(client_ids)
+                
+                generate_combined_streamlit_report(df, df5)
+            else:
+                st.warning("No employee activity records found for the selected date range.")
+        else:
+            st.error("Failed to fetch client data.")
+    else:
+        st.warning("No stage progression data found for the selected date range.")
