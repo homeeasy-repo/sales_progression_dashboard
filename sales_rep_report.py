@@ -17,7 +17,7 @@ db_params = {
     'port': st.secrets["database"]["DB_PORT"]
 }
 
-employee_names = ['Mukund Chopra','John Green', 'Sara Edward','Ryan Rehman','Omar Blake','Simon Sinek','Daniel Robinson', 'Moohi Ahmed','Waseem Zubair','Alina Victor']
+employee_names = ['Mukund Chopra','John Green', 'Hiba Siddiqui','Travis Grey','John Reed','Joshua weller','SOVIT BISWAL', 'Emma Paul','Omar Rogers','Ruby Smith', 'Brian Baik', 'BPO Diligence']
 
 end_time = datetime.now()
 start_time = end_time - timedelta(days=1)
@@ -260,7 +260,7 @@ def generate_combined_streamlit_report(df, df5):
     employee_names = df['employee_name'].unique()
     for employee_name in employee_names:
         add_employee_report(employee_name, df, df5)
-
+        
 def show_sales_rep_daily_report():
     df5 = run_query_and_save_to_csv(sql_query)
     df5 = df5.drop_duplicates(subset=['client_id', 'current_stage'])
@@ -275,6 +275,10 @@ def show_sales_rep_daily_report():
     df.drop('message', axis=1, inplace=True)
     df['time_stamp'] = pd.to_datetime(df['timestamp'])
 
+    # Ensure call_duration exists
+    if 'call_duration' not in df.columns:
+        df['call_duration'] = 0  # Initialize column
+
     for i in range(len(df) - 1):
         if df.loc[i, 'type'] == 'call_created' and df.loc[i+1, 'type'] == 'call_completed':
             start_unix = df.loc[i, 'time_stamp'].timestamp()
@@ -284,15 +288,14 @@ def show_sales_rep_daily_report():
 
     df['client_name'] = df['client_id'].map(client_ids)
     df = df[df['type'] != 'call_completed']
-    df.loc[(df['type'] == 'call_created') & (df['call_duration'].isnull()), 'call_duration'] = 0
+    
+    # Ensure call_duration column is handled properly
+    df['call_duration'] = df['call_duration'].fillna(0)
 
     for index, row in df.iterrows():
         if row['call_duration'] == 0:
             df.loc[index, 'call_duration'] = df[df['employee_name'] == row['employee_name']]['call_duration'].mean()
 
     df.drop('time_stamp', axis=1, inplace=True)
-
-    ASSIGNED_MINUTES = 480
-    SECONDS_PER_MESSAGE = 5
 
     generate_combined_streamlit_report(df, df5)
