@@ -4,8 +4,7 @@ from client_stage_progression import show_client_stage_progression
 from low_sales_progression import show_low_sales_progression
 from streamlit_autorefresh import st_autorefresh
 from may_accounts_monitor import show_recent_clients
-# from sales_rep_report import show_sales_rep_daily_report
-from sales_daily_report import main
+from sales_daily_report import show_sales_rep_daily_report
 from building_send_clients import may_update_channel_clients
 from clients_under_1000 import under_1000_budget_clients
 from under_1500_clients import btw_1000_1500_budget_clients
@@ -138,7 +137,7 @@ elif page == "Client Stage Progression Report":
 elif page == "May Account Assigned Clients":
     show_recent_clients()
 elif page == "Sales Rep Daily Report":
-    main()
+    show_sales_rep_daily_report()
 elif page == "May Update Channel Clients":
     may_update_channel_clients()
 elif page == "Today's Client Under 1000$":

@@ -33,7 +33,7 @@ db_params = {
 # print(f"User: {db_params['user']}")
 # print(f"Port: {db_params['port']}")
 
-employee_names = ['Mukund Chopra','John Green', 'Hiba Siddiqui','Travis Grey','John Reed','Joshua weller','Shanzay Adams', 'SOVIT BISWAL', 'Emma Paul','Omar Rogers','Ruby Smith', 'Brian Baik', 'BPO Diligence']
+employee_names = ['Mukund Chopra','John Green', 'Hiba Siddiqui','Travis Grey','John Reed','Joshua weller','Shanzay Adams', 'SOVIT BISWAL','Omar Rogers','Ruby Smith', 'BPO Diligence', 'Evard Odlanyer P. Aguilar', 'Andrei Joshua U. Descaller', 'Ferwhin I. Solano', 'Fiel G. Rivera', 'Soliman M. Soliman', 'Sophie Scott', 'Nora Bannon', 'Henry Brown', 'Adam Kent']
 
 # Default date range calculation - will be overridden by user selection
 end_time = datetime.now()
@@ -610,14 +610,14 @@ def show_sales_rep_daily_report():
     else:
         st.warning("No stage progression data found for the selected date range.")
 
-def main():
-    try:
-        # Show the sales rep daily report
-        show_sales_rep_daily_report()
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
-        st.exception(e)
+# def main():
+#     try:
+#         # Show the sales rep daily report
+#         show_sales_rep_daily_report()
+#     except Exception as e:
+#         st.error(f"An error occurred: {str(e)}")
+#         st.exception(e)
 
-# Run the app
-if __name__ == "__main__":
-    main()
+# # Run the app
+# if __name__ == "__main__":
+#     main()
