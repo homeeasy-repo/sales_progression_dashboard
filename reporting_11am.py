@@ -42,7 +42,7 @@ def generate_11am_report():
     fetch_employees_query = """
         SELECT DISTINCT e.fullname 
         FROM public.employee e
-        WHERE e.id IN (356, 409, 411, 412, 413, 414, 417, 419, 421, 422, 423 , 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435)
+        WHERE e.id IN (356, 409, 411, 412, 413, 414, 417, 419, 421, 422, 423 , 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 437, 438, 439, 440, 441, 442, 443, 444, 445)
         AND e.fullname IS NOT NULL
         ORDER BY e.fullname;
     """

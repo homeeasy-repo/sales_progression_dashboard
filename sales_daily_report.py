@@ -33,7 +33,7 @@ db_params = {
 # print(f"User: {db_params['user']}")
 # print(f"Port: {db_params['port']}")
 
-employee_names = ['Mukund Chopra','John Green', 'Hiba Siddiqui','Travis Grey','John Reed','Joshua weller','Shanzay Adams', 'SOVIT BISWAL','Omar Rogers','Ruby Smith', 'BPO Diligence', 'Evard Odlanyer P. Aguilar', 'Andrei Joshua U. Descaller', 'Ferwhin I. Solano', 'Fiel G. Rivera', 'Soliman M. Soliman', 'Sophie Scott', 'Nora Bannon', 'Henry Brown', 'Adam Kent']
+employee_names = ['Mukund Chopra','John Green', 'Hiba Siddiqui','Travis Grey','John Reed','Joshua weller','Shanzay Adams', 'SOVIT BISWAL','Omar Rogers','Ruby Smith', 'BPO Diligence', 'Evard Odlanyer P. Aguilar', 'Andrei Joshua U. Descaller', 'Ferwhin I. Solano', 'Fiel G. Rivera', 'Soliman M. Soliman', 'Sophie Scott', 'Nora Bannon', 'Henry Brown', 'Adam Kent' , 'Brian Baik','Hugh Taylor', 'Stanley Martin', 'Wilson Carter','Marcia Monroe', 'Michelle Taylor','Shaun Green','Sarah Michael','Amber Baker','Hildah Manoah']
 
 # Default date range calculation - will be overridden by user selection
 end_time = datetime.now()
