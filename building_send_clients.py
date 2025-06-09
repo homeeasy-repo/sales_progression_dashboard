@@ -72,7 +72,7 @@ def may_update_channel_clients():
             st.write("No clients found.")
         else:
             total_clients = len(df)
-            not_assigned_to_317_318_319 = (~df['assigned_employee'].isin([317, 318, 319,410,415,416])).sum()
+            not_assigned_to_317_318_319 = (~df['assigned_employee'].isin([317, 318, 319,410,415,416,160, 20])).sum()
             percentage_not_assigned = (not_assigned_to_317_318_319 / total_clients) * 100
 
             # st.write(f"Percentage of clients assigned to employees: {percentage_not_assigned:.2f}%")

@@ -40,8 +40,8 @@ page = st.sidebar.selectbox("Choose a report", [
     "Client Stage Progression Report", 
     "Low Sales Progression", 
     "Sales Rep Daily Report", 
-    "May Account Assigned Clients", 
-    "May Update Channel Clients", 
+    "Amy Account Assigned Clients", 
+    "Amy Update Channel Clients", 
     "Today's Client Under 1000$", 
     "Today's Client Between 1000$ and 1500$", 
     "Today's Clients between 1500$ and 2000$", 
@@ -134,11 +134,11 @@ elif page == "11 AM Reporting":
     generate_11am_report()
 elif page == "Client Stage Progression Report":
     show_client_stage_progression()
-elif page == "May Account Assigned Clients":
+elif page == "Amy Account Assigned Clients":
     show_recent_clients()
 elif page == "Sales Rep Daily Report":
     show_sales_rep_daily_report()
-elif page == "May Update Channel Clients":
+elif page == "Amy Update Channel Clients":
     may_update_channel_clients()
 elif page == "Today's Client Under 1000$":
     under_1000_budget_clients()
